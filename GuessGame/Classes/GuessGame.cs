@@ -1,0 +1,793 @@
+﻿using System;
+using System.Drawing;
+using System.IO;
+using System.Threading;
+
+namespace GuessGame.Class
+{
+    class GuessGame : User
+    {
+        //Private variables
+        private int rndNumber;
+        private int chances;
+        private int score;
+        private string GameLevel;
+        private int CorrectNumberGuess;
+        private string path;
+        private string pathLastSave;
+        private string AsOpen;
+        public Forms.Guess_Game game = new Forms.Guess_Game();
+        //Object of base class
+        private User user;
+        private int n;
+
+        //Constructors
+        public GuessGame(string Name, string Type, int Age,
+            string GameLevel, string path, string LastSave, string AsOpen , bool Generate) : base(Name, Type, Age)
+        {
+            this.AsOpen = AsOpen;
+            this.path = path;
+            pathLastSave = LastSave;
+            //Object of base class
+            user = new User(Name, Type, Age);
+            if(Generate == true)
+                GenerateRandomNumber(GameLevel);
+            string[] Data = new string[6];
+            string data;
+            if (File.Exists(path))
+            {
+                StreamReader reader = new StreamReader(path);
+                if (reader.ReadLine() != null)
+                {
+                    Data = File.ReadAllLines(path);
+                    data = Data[0];
+                    Data = data.Split(',');
+                }
+                reader.Close();
+            }
+            else
+                Data[0] = "";
+            FileStream fs = new FileStream(pathLastSave, FileMode.Open, FileAccess.Read);
+            StreamReader sr = new StreamReader(fs);
+            string reading = sr.ReadLine();
+            sr.Close();
+            fs.Close();
+            switch (AsOpen)
+            {
+                case "Console":
+
+                    break;
+                case "Form":
+
+                    break;
+            }
+            if (reading != "")
+                CorrectNumberGuess = Convert.ToInt32(reading.Split(',')[5]);
+            else
+                CorrectNumberGuess = 0;
+            this.GameLevel = GameLevel;
+            if (chances == 0)
+                chances = 5;
+            if (Data[0] != "")
+                score = Convert.ToInt32(reading.Split(',')[4]);
+            else
+                score = 0;
+        }
+        public GuessGame(string Type, int Age, string GameLevel, string path) : base( Type, Age)
+        {
+            this.path = path;
+            //Object of base class
+            user = new User(Type, Age);
+            GenerateRandomNumber(GameLevel);
+            CorrectNumberGuess = 0;
+            this.GameLevel = GameLevel;
+            chances = 5;
+            score = 0;
+        }
+        public GuessGame(string Name, string Type, int Age , string GameLevel) : base(Name, Type, Age)
+        {
+            //Object of base class
+            user = new User(Name, Type, Age);
+            GenerateRandomNumber(GameLevel);
+            CorrectNumberGuess = 0;
+            this.GameLevel = GameLevel;
+            path = @"C:\Previous game data\Saves\GuAllUserInfo.txt";
+            chances = 5;
+            score = 0;
+        }
+        public GuessGame(string Name , string Type , int Age) : base(Name, Type, Age)
+        {
+            //Object of base class
+            user = new User(Name, Type, Age);
+            GenerateRandomNumber(GameLevel);
+            CorrectNumberGuess = 0;
+            GameLevel = "easy";
+            path = @"C:\Previous game data\Saves\GuAllUserInfo.txt";
+            chances = 5;
+            score = 0;
+        }
+        public GuessGame(string Name , string Type) : base(Name, Type)
+        {
+            //Object of base class
+            user = new User(Name, Type);
+            GenerateRandomNumber(GameLevel);
+            CorrectNumberGuess = 0;
+            GameLevel = "easy";
+            path = @"C:\Previous game data\Saves\GuAllUserInfo.txt";
+            chances = 5;
+            score = 0;
+        }
+        public GuessGame(string Name) : base(Name)
+        {
+            //Object of base class
+            user = new User(Name);
+            GenerateRandomNumber(GameLevel);
+            CorrectNumberGuess = 0;
+            GameLevel = "easy";
+            path = @"C:\Previous game data\Saves\GuAllUserInfo.txt";
+            chances = 5;
+            score = 0;
+        }
+        public GuessGame():base()
+        {
+            //Object of base class
+            user = new User();
+            GenerateRandomNumber(GameLevel);
+            CorrectNumberGuess = 0;
+            GameLevel = "easy";
+            path = @"C:\Previous game data\Saves\GuAllUserInfo.txt";
+            chances = 5;
+            score = 0;
+        }
+        /// <summary>
+        /// Check entry number user function
+        /// </summary>
+        /// <param name="number">Entry user</param>
+        /// <param name="GameLevel">Generated by application</param>
+        /// <returns></returns>
+        public int CheckUserInput(int number, string GameLevel)
+        {
+            string Result;
+            bool ForeColorFormCheck;
+            if (number == rndNumber)
+            {
+                ForeColorFormCheck = true;
+                Console.ForegroundColor = ConsoleColor.Green;
+                Result = ">>The entered number is correct";
+                Console.WriteLine(Result);
+                Console.ForegroundColor = ConsoleColor.White;
+                SaveLastAction();
+                GoToNextNumber(GameLevel);
+                CorrectNumberGuess++;
+                if (AsOpen == "Form")
+                {
+                    game.StatusLabel.ForeColor = ForeColorFormCheck == true ? Color.Green : Color.Red;
+                    game.pictureBox1.Image = Properties.Resources.ok;
+                    game.StatusLabel.Text = Result;
+                }
+                return 1;
+            }
+            chances--;
+            if (chances > 0)
+            {
+                if (rndNumber > number)
+                {
+                    ForeColorFormCheck = false;
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Result = ">>Enter a bigger number";
+                    Console.WriteLine(Result); Console.Beep();
+                    Console.ForegroundColor = ConsoleColor.White;
+                    if (AsOpen == "Form")
+                    {
+                        game.StatusLabel.ForeColor = ForeColorFormCheck == true ? Color.Red : Color.Green;
+                        game.pictureBox1.Image = Properties.Resources.cancel;
+                        game.StatusLabel.Text = Result;
+                    }
+                }
+
+                else
+                {
+                    ForeColorFormCheck = false;
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Result = ">>Enyer a smaller number";
+                    Console.WriteLine(Result); Console.Beep();
+                    Console.ForegroundColor = ConsoleColor.White;
+                    if (AsOpen == "Form")
+                    {
+
+                        game.StatusLabel.ForeColor = ForeColorFormCheck == true ? Color.Red : Color.Green;
+                        game.pictureBox1.Image = Properties.Resources.cancel;
+                        game.StatusLabel.Text = Result;
+                    }
+                }
+                return 0;
+            }
+            return -1;
+        }
+        /// <summary>
+        /// This function can show the user a hint in the form of help
+        /// </summary>
+        public void HelpUser()
+        {
+            //Check the amount of points earned
+            if (score >= 30)
+            {
+                if (GameLevel == "hard" || GameLevel == "Hard")
+                {
+                    Console.ForegroundColor = ConsoleColor.DarkYellow;
+                    Console.WriteLine($"Hint: The number you have to guess is between {rndNumber - 250} and {rndNumber + 250}.");
+                    score -= 30;
+                    Console.WriteLine($"Your new score : {score}");
+                    Console.ForegroundColor = ConsoleColor.White;
+                }
+                else
+                {
+                    Console.ForegroundColor = ConsoleColor.DarkYellow;
+                    Console.WriteLine($"Hint: The number you have to guess is between {rndNumber - 25} and {rndNumber + 25}.");
+                    score -= 20;
+                    Console.WriteLine($"Your new score : {score}");
+                    Console.ForegroundColor = ConsoleColor.White;
+                }
+                SaveToFile();
+            }
+            //If the number of points is less than 30, the codes of this block will be executed
+            else
+            {
+                Console.ForegroundColor = ConsoleColor.DarkYellow;
+                Console.WriteLine("[!] You do not have enough points to get help.\n");
+                Console.ForegroundColor = ConsoleColor.White;
+            }
+            ShowMenu();
+        }
+        /// <summary>
+        /// This function is executed every time the user enters a 
+        /// number and has the role of displaying chances and points.
+        /// </summary>
+        public void PrintSC()
+        {
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine
+                (
+                $"\nChances : {chances}\n" +
+                $"Score   : {score}"
+                );
+            Console.ForegroundColor = ConsoleColor.White;
+        }
+        /// <summary>
+        /// This function generates a random number based on the level of the game
+        /// </summary>
+        /// <param name="GameLevel">It determines the level of the game and the input is the function</param>
+        public void GenerateRandomNumber(string GameLevel)
+        {
+            //Hard Level
+            if(GameLevel == "hard" || GameLevel  == "Hard")
+            {
+                Random rn = new Random();
+                rndNumber = rn.Next(1000);
+                
+            }
+            //Easy Level
+            else
+            {
+                Random rn = new Random();
+                rndNumber = rn.Next(100);
+                
+            }
+        }
+        public void ReStartGame(string Name, string Type, int Age, string GameLevel, string path)
+        {
+            SetVal(Name, Type, Age, GameLevel, path);
+            GenerateRandomNumber(GameLevel);
+        }
+        public override void SetVal(string Name, string Type, int Age , string GameLevel , string path)
+        {
+            base.SetVal(Name, Type, Age , GameLevel, path);
+            this.GameLevel = GameLevel;
+            this.path = path;
+
+        }
+        /// <summary>
+        /// This function gives points based on the level of the game and calls the random 
+        /// number generation function again and is executed only if the number 
+        /// entered by the user is equal to the number that the program has considered.
+        /// </summary>
+        /// <param name="GameLevel">It determines the level of the game and the input is the function</param>
+        private void GoToNextNumber(string GameLevel)
+        {
+            //Hard Level
+            if(GameLevel == "hard" || GameLevel == "Hard")
+            {
+                score += chances * 50;
+                Console.WriteLine("Current Score: " + score);
+                GenerateRandomNumber(GameLevel);
+                chances = 5;
+            }
+            //Easy Level
+            else
+            {
+                score += chances * 10;
+                Console.WriteLine("Current Score: " + score);
+                GenerateRandomNumber(GameLevel);
+                chances = 5;
+            }
+        }
+        //This function is not used in the program
+        private void ContinueGuessing()
+        {
+            Console.WriteLine("Remained Chances: " + chances);
+            Console.WriteLine("Guess Again: ");
+        }
+        /// <summary>
+        /// This function sets the number of chances and is executed
+        /// if the user has missed all the chances or loses.
+        /// </summary>
+        public void SetChances()
+        {
+            chances = 5;
+        }
+        public void ResetScore()
+        {
+            score = 0;
+        }
+        public void SetScore()
+        {
+            score += 50;
+        }
+        /// <summary>
+        /// This function is executed when the user loses and 
+        /// saves the game data in a file with a csv extension.
+        /// </summary>
+        public override void Print()
+        {
+            Console.WriteLine("You lost!");
+            Console.WriteLine("Your score: " + score);
+            
+            try
+            {
+                SaveToFile();
+            }
+            catch(Exception ex)
+            {
+                Console.WriteLine($"\n{ex.Message}");
+                Waiting();
+                ShowMenu();
+            }
+            Console.WriteLine("Press any key to exit");
+        }
+        /// <summary>
+        /// This function displays the name that the user enters in the saved list and the player's information.
+        /// </summary>
+        /// <param name="Name">To search for a player or user</param>
+        public override void SearchFromData(string Name)
+        {
+            try
+            {
+                string[] Data = new string[6];
+                StreamReader ReadFromFile = new StreamReader(path);
+                while (ReadFromFile.Peek() != -1)
+                {
+                    Data = ReadFromFile.ReadLine().Split(',');
+                    if (Data[2] == Name)
+                        break;
+                }
+                Console.WriteLine($"Name:{Data[2]} , Type:{Data[3]} , Age:{Data[4]} , " +
+                    $"Score:{Data[0]} , Number of correct numbers:{Data[1]} , Game level:{Data[5]}");
+                ReadFromFile.Close();
+            }
+            catch(Exception ex)
+            {
+                Console.WriteLine($"\n{ex.Message}");
+                Waiting();
+                ShowMenu();
+            }
+        }
+        /// <summary>
+        /// Display all stored information
+        /// </summary>
+        public override void ShowAllDataSaved()
+        {
+            try
+            {
+
+                Console.ForegroundColor = ConsoleColor.DarkCyan;
+                Console.WriteLine("\n>Show all users : \n");
+                Console.ForegroundColor = ConsoleColor.White;
+                StreamReader ReadFromFile = new StreamReader(path);
+                string[] Data = new string[10];
+                int index = 1;
+                while(ReadFromFile.Peek() != -1)
+                {
+                    Data = ReadFromFile.ReadLine().Split(',');
+                    if (Data.Length >= 4)
+                        Console.WriteLine($"[\t{index}\t] Name:{Data[2]} , Type:{Data[3]} , Age:{Data[4]} , " +
+                        $"Score:{Data[0]} , Number of correct numbers:{Data[1]} , Game level:{Data[5]}");
+                    index++;
+                }
+                
+                ReadFromFile.Close();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"\n{ex.Message}");
+                Waiting();
+                ShowMenu();
+            }
+        }
+        /// <summary>
+        /// This function has the role of displaying the top 5 players so far.
+        /// </summary>
+        public override void TopPlayer()
+        {
+            string Data;
+            string[] OutputData = new string[6];
+            int index = 0, n = 0;
+            try
+            {
+                if (File.Exists(path))
+                {
+                    FileStream fs = new FileStream(path, FileMode.Open, FileAccess.Read);
+                    StreamReader sr = new StreamReader(fs);
+                    //Read from file
+                    while (sr.Peek() != -1)
+                    {
+                        Data = sr.ReadLine();
+                        if (Data.Split(',').Length >= 4)
+                        {
+                            index++;
+                        }
+                    }
+                    fs.Close();
+                    sr.Close();
+                    FileStream fs1 = new FileStream(path, FileMode.Open, FileAccess.Read);
+                    StreamReader sr1 = new StreamReader(fs1);
+                    string[] ArrData = new string[index];
+                    string[] Username = new string[index];
+                    int[] scoreUser = new int[index];
+                    for (int i = 0; i < index; i++)
+                    {
+                        Data = sr1.ReadLine();
+                        if (Data.Split(',').Length >= 4)
+                        {
+                            ArrData[i] = Data;
+                            OutputData = ArrData[i].Split(',');
+                            Username[i] = OutputData[2];
+                            if (int.TryParse(OutputData[1], out n))
+                                scoreUser[i] = Convert.ToInt32(OutputData[0]);
+                        }
+                    }
+                    sr1.Close();
+                    fs1.Close();
+                    int max = 0, iPrint = 0;
+                    string IndexOneOfUsername = Username[0];
+                    if (index > 1)
+                        for (int i = 0; i < index; i++)
+                        {
+                            if (Username[i] == IndexOneOfUsername)
+                            {
+                                if (scoreUser[i] > max)
+                                {
+                                    max = scoreUser[i];
+                                }
+                            }
+                            else if (Username[i] != IndexOneOfUsername)
+                            {
+                                if (iPrint < 5)
+                                {
+
+                                    Console.Write($">{Username[i - 1]}");
+                                    Console.Write(':');
+                                    Console.WriteLine($"[{scoreUser[i - 1]}]");
+                                    IndexOneOfUsername = Username[i];
+                                    max = 0;
+                                    iPrint++;
+                                }
+                            }
+                            if (i == index - 1)
+                            {
+                                if (iPrint < 5)
+                                {
+                                    Console.Write($">{Username[i - 1]}");
+                                    Console.Write(':');
+                                    Console.WriteLine($"[{max}]");
+                                    iPrint++;
+                                }
+                            }
+                        }
+                    else
+                    {
+                        Console.Write($">{Username[0]}");
+                        Console.Write(':');
+                        Console.WriteLine($"[{scoreUser[0]}]");
+                    }
+                }
+                else
+                {
+                    File.Create(path);
+                }
+            }
+            catch (Exception ex)
+            {
+                
+                Console.WriteLine($"\n{ex.Message}");
+                Waiting();
+                ShowMenu();
+            }
+        }
+        /// <summary>
+        /// This function sorts and shows all the information in the stored file based on age.
+        /// </summary>
+        public override void SortListByAge()
+        {
+            base.SortListByAge();
+            string  Data;
+            string[] ArrData =  new string [10000];
+            string[] SetData = new string[6];
+            int max = 5;
+            int bellowMax = 0;
+            int index = 0;
+            try
+            {
+                if (File.Exists(path))
+                {
+                    FileStream fs = new FileStream(path, FileMode.Open, FileAccess.Read);
+                    StreamReader sr = new StreamReader(fs);
+                    while (sr.Peek() != -1)
+                    {
+                        Data = sr.ReadLine();
+                        if (Data.Split(',').Length >= 4)
+                        {
+                            ArrData[index] = Data;
+                            index++;
+                        }
+                    }
+                    sr.Close();
+                    fs.Close();
+                    for (int i = 0; i < index; i++)
+                    {
+                        if (ArrData[i].Split(',').Length >= 4)
+                        {
+                            SetData = ArrData[i].Split(',');
+                            if (int.TryParse(SetData[4], out n))
+                                if (Convert.ToInt32(SetData[4]) > max)
+                                max = Convert.ToInt32(SetData[4]);
+                        }
+                    }
+                    for (int i = 0; i < index; i++)
+                    {
+                        if (ArrData[i].Split(',').Length >= 4)
+                        {
+                            SetData = ArrData[i].Split(',');
+                            if (int.TryParse(SetData[4], out n))
+                                if (Convert.ToInt32(SetData[4]) > bellowMax && Convert.ToInt32(SetData[4]) < max)
+                                bellowMax = Convert.ToInt32(SetData[4]);
+                        }
+                    }
+                    int Row = 1;
+                    Console.ForegroundColor = ConsoleColor.DarkCyan;
+                    Console.WriteLine("\n>Sorting users by user age : \n");
+                    Console.ForegroundColor = ConsoleColor.White;
+                    for (int i = 0; i < index; i++)
+                    {
+                        for (int j = 0; j < index; j++)
+                        {
+                            SetData = ArrData[j].Split(',');
+                            if (int.TryParse(SetData[4], out n))
+                                if (Convert.ToInt32(SetData[4]) == max)
+                                {
+                                    Console.Write($"[\t{Row}\t] Name:{SetData[2]} , Type:{SetData[3]} , ");
+                                    Console.ForegroundColor = ConsoleColor.DarkGreen;
+                                    Console.Write($"Age:{SetData[4]}");
+                                    Console.ForegroundColor = ConsoleColor.White;
+                                    Console.WriteLine($" , Score:{SetData[0]} , Number of correct numbers:{SetData[1]} , Game level:{SetData[5]}");
+                                    Row++;
+                                }
+                        }
+                        max = bellowMax;
+                        bellowMax = 0;
+                        for (int j = 0; j < index; j++)
+                        {
+                            if (int.TryParse(SetData[4], out n))
+                                if (ArrData[j].Split(',').Length >= 4)
+                                {
+                                    SetData = ArrData[j].Split(',');
+                                    if (Convert.ToInt32(SetData[4]) > bellowMax && Convert.ToInt32(SetData[4]) < max)
+                                        bellowMax = Convert.ToInt32(SetData[4]);
+                                }
+                        }
+                    }
+                }
+                else
+                {
+                    File.Create(path);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"\n{ex.Message}");
+                Waiting();
+                ShowMenu();
+            }
+        }
+        /// <summary>
+        /// This function counts the number of times the player has played.
+        /// </summary>
+        public override void BestGame()
+        {
+
+            Console.ForegroundColor = ConsoleColor.DarkCyan;
+            Console.WriteLine("\n>The most win per user : \n");
+            Console.ForegroundColor = ConsoleColor.White;
+            string Data;
+            string[] OutputData = new string[6];
+            int index = 0 , n = 0;
+            try
+            {
+                if (File.Exists(path))
+                {
+                    FileStream fs = new FileStream(path, FileMode.Open, FileAccess.Read);
+                    StreamReader sr = new StreamReader(fs);
+                    //Read from file
+                    while (sr.Peek() != -1)
+                    {
+                        Data = sr.ReadLine();
+                        if (Data.Split(',').Length >= 4)
+                        {
+                            index++;
+                        }
+                    }
+                    sr.Close();
+                    fs.Close();
+                    FileStream fs1 = new FileStream(path, FileMode.Open, FileAccess.Read);
+                    StreamReader sr1 = new StreamReader(fs1);
+                    string[] ArrData = new string[index];
+                    string[] Username = new string[index];
+                    string[] Age = new string[index];
+                    int[] counter = new int[index];
+                    for (int i = 0; i < index; i++)
+                    {
+                        Data = sr1.ReadLine();
+                        if (Data.Split(',').Length >= 4)
+                        {
+                            ArrData[i] = Data;
+                            OutputData = ArrData[i].Split(',');
+                            Username[i] = OutputData[2];
+                            Age[i] = OutputData[4];
+                            if (int.TryParse(OutputData[1], out n))
+                                counter[i] = Convert.ToInt32(OutputData[1]);
+                        }
+                    }
+                    sr1.Close();
+                    fs1.Close();
+                    int max = 0;
+                    int[] indexof = new int[index];
+                    string IndexOneOfUsername = Username[0];
+                    if (index > 1)
+                        for (int i = 0; i < index; i++)
+                        {
+                            if (Username[i] == IndexOneOfUsername)
+                            {
+                                if (counter[i] > max)
+                                {
+                                    max = counter[i];
+                                }
+                            }
+                            else if (Username[i] != IndexOneOfUsername)
+                            {
+                                Console.Write($">{Username[i - 1]}");
+                                //for (int j = Username[i].Length; j < 15; j++)
+                                //    Console.Write(' ');
+                                Console.Write(':');
+                                //for (int j = 16; j < 26; j++)
+                                //    Console.Write(' ');
+                                Console.WriteLine($"[{max}]");
+                                IndexOneOfUsername = Username[i];
+                                max = 0;
+                            }
+                            if (i == index - 1)
+                            {
+                                Console.Write($">{Username[i - 1]}");
+                                //for (int j = Username[i].Length; j < 15; j++)
+                                //    Console.Write(' ');
+                                Console.Write(':');
+                                //for (int j = 16; j < 26; j++)
+                                //    Console.Write(' ');
+                                Console.WriteLine($"[{max}]");
+                            }
+                        }
+                    else
+                    {
+                        Console.Write($">{Username[0]}");
+                        //for (int j = Username[i].Length; j < 15; j++)
+                        //    Console.Write(' ');
+                        Console.Write(':');
+                        //for (int j = 16; j < 26; j++)
+                        //    Console.Write(' ');
+                        Console.WriteLine($"[{counter[0]}]");
+                    }
+                }
+                else
+                {
+                    File.Create(path);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"\n{ex.Message}");
+                Waiting();
+                ShowMenu();
+            }
+        }
+        public void SaveLastAction()
+        {
+            string pathLastSaveFile = @"C:\Previous game data\Saves\GuAddOfTheReserv-ConsoleResult.txt";
+            string Data = $"{user.SendData()},{GameLevel},{score},{CorrectNumberGuess}";
+            if (File.Exists(pathLastSaveFile))
+                File.Delete(pathLastSaveFile);
+            FileStream fs = new FileStream(pathLastSaveFile, FileMode.CreateNew, FileAccess.Write);
+            StreamWriter writer = new StreamWriter(fs);
+            writer.WriteLine(Data);
+            writer.Flush();
+            writer.Close();
+            fs.Close();
+
+        }
+        /// <summary>
+        /// This function can saving all data the game
+        /// </summary>
+        public void SaveToFile()
+        {
+            Program.Save(user.SendData(), GameLevel, CorrectNumberGuess.ToString(), score.ToString());
+        }
+
+        /// <summary>
+        /// This function can saving all data the game
+        /// </summary>
+        public void DeleteFile()
+        {
+            try
+            {
+                if (Directory.Exists(@"C:\Previous game data\Saves"))
+                {
+                    if (File.Exists(path))
+                    {
+                        File.Delete(path);
+                        Console.WriteLine("Deleted file!");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"\n{ex.Message}");
+                Waiting();
+                ShowMenu();
+            }
+        }
+
+        /// <summary>
+        /// This function gives the player more points,
+        /// but if he can no longer guess the number and 
+        /// loses many times and the user wants to continue again.
+        /// </summary>
+        public void ExtraScore()
+        {
+            score += 30;
+        }
+        private void ShowMenu()
+        {
+            Program.ShowMenu();
+        }
+        public void Waiting()
+        {
+            for (int j = 0; j < 2; j++)
+            {
+                Console.Write("Wating");
+                for (int k = 0; k < 3; k++)
+                {
+                    Console.Write('.');
+                    Thread.Sleep(1000);
+                }
+                Console.Clear();
+            }
+        }
+    }
+}
